@@ -80,6 +80,8 @@ class Decoder {
   void PrintShamt(Instruction* instr);
   void PrintShamt32(Instruction* instr);
   void PrintRvcImm6(Instruction* instr);
+  void PrintRvcImm6Ldsp(Instruction* instr);
+  void PrintRvcImm6Lwsp(Instruction* instr);
   void PrintAcquireRelease(Instruction* instr);
   void PrintBranchOffset(Instruction* instr);
   void PrintStoreOffset(Instruction* instr);
@@ -230,6 +232,16 @@ void Decoder::PrintShamt32(Instruction* instr) {
 
 void Decoder::PrintRvcImm6(Instruction* instr) {
   int32_t imm = instr->RvcImm6Value();
+  out_buffer_pos_ += SNPrintF(out_buffer_ + out_buffer_pos_, "%d", imm);
+}
+
+void Decoder::PrintRvcImm6Ldsp(Instruction* instr) {
+  int32_t imm = instr->RvcImm6LdspValue();
+  out_buffer_pos_ += SNPrintF(out_buffer_ + out_buffer_pos_, "%d", imm);
+}
+
+void Decoder::PrintRvcImm6Lwsp(Instruction* instr) {
+  int32_t imm = instr->RvcImm6LwspValue();
   out_buffer_pos_ += SNPrintF(out_buffer_ + out_buffer_pos_, "%d", imm);
 }
 
@@ -448,6 +460,22 @@ int Decoder::FormatRvcRegister(Instruction* instr, const char* format) {
 int Decoder::FormatRvcImm(Instruction* instr, const char* format) {
   // TODO: add other rvc imm format
   DCHECK(STRING_STARTS_WITH(format, "Cimm6"));
+  if (format[5] == 'L') {
+    if (format[6] == 'd') {
+      if (format[7] == 's') {
+        DCHECK(STRING_STARTS_WITH(format, "Cimm6Ldsp"));
+        PrintRvcImm6Ldsp(instr);
+        return 9;
+      }
+    } else if (format[6] == 'w') {
+      if (format[7] == 's') {
+        DCHECK(STRING_STARTS_WITH(format, "Cimm6Lwsp"));
+        PrintRvcImm6Lwsp(instr);
+        return 9;
+      }
+    }
+    UNREACHABLE();
+  }
   PrintRvcImm6(instr);
   return 5;
 }
@@ -1456,6 +1484,15 @@ void Decoder::DecodeCIType(Instruction* instr) {
         Format(instr, "nop");
       else
         Format(instr, "addi      'Crd, 'Crd, 'Cimm6");
+      break;
+    case RO_C_FLDSP:
+      Format(instr, "fld       'Cfd, 'Cimm6Ldsp(sp)");
+      break;
+    case RO_C_LWSP:
+      Format(instr, "lw        'Crd, 'Cimm6Lwsp(sp)");
+      break;
+    case RO_C_LDSP:
+      Format(instr, "ld        'Crd, 'Cimm6Ldsp(sp)");
       break;
     default:
       UNSUPPORTED_RISCV();

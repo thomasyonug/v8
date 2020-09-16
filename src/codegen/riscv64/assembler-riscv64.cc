@@ -874,6 +874,14 @@ void Assembler::GenInstrCIU(uint8_t funct3, Opcode opcode, Register rd,
   emit(instr);
 }
 
+void Assembler::GenInstrCIU(uint8_t funct3, Opcode opcode, FPURegister rd,
+                           uint8_t uimm6) {
+  DCHECK(is_uint3(funct3) && rd.is_valid() && is_uint6(uimm6));
+  ShortInstr instr = opcode | ((uimm6 & 0x1f) << 2) | (rd.code() << kRvcRdShift) |
+                   ((uimm6 & 0x20) << 7) | (funct3 << kRvcFunct3Shift);
+  emit(instr);
+}
+
 // ----- Instruction class templates match those in the compiler
 
 void Assembler::GenInstrBranchCC_rri(uint8_t funct3, Register rs1, Register rs2,
@@ -1815,6 +1823,28 @@ void Assembler::c_addi(Register rd, int8_t imm6) {
   GenInstrCI(0b000, C1, rd, imm6);
 }
 
+void Assembler::c_fldsp(FPURegister rd, int16_t imm9) {
+  DCHECK((imm9 & 0x7) == 0);
+  uint8_t uimm6 = (imm9 & 0x38) | ((imm9 & 0x1c0) >> 6);
+  GenInstrCIU(0b001, C2, rd, uimm6);
+}
+
+void Assembler::c_lwsp(Register rd, int16_t imm8) {
+  DCHECK(rd != zero_reg && (imm8 & 0x3) == 0);
+  uint8_t uimm6 = (imm8 & 0x3c) | ((imm8 & 0xc0) >> 6);
+  GenInstrCIU(0b010, C2, rd, uimm6);
+}
+
+void Assembler::c_ldsp(Register rd, int16_t imm9) {
+  DCHECK(rd != zero_reg && (imm9 & 0x7) == 0);
+  uint8_t uimm6 = (imm9 & 0x38) | ((imm9 & 0x1c0) >> 6);
+  GenInstrCIU(0b011, C2, rd, uimm6);
+}
+
+void Assembler::c_ebreak() {
+  GenInstrCR(0b1001, C2, ToRegister(0), ToRegister(0));
+}
+
 void Assembler::c_jr(Register rs1) {
   GenInstrCR(0b1000, C2, rs1, ToRegister(0));
   BlockTrampolinePoolFor(1);
@@ -1823,10 +1853,6 @@ void Assembler::c_jr(Register rs1) {
 void Assembler::c_mv(Register rd, Register rs2) {
   DCHECK(rd != ToRegister(0) && rs2 != ToRegister(0));
   GenInstrCR(0b1000, C2, rd, rs2);
-}
-
-void Assembler::c_ebreak() {
-  GenInstrCR(0b1001, C2, ToRegister(0), ToRegister(0));
 }
 
 void Assembler::c_jalr(Register rs1) {

@@ -580,6 +580,9 @@ class V8_EXPORT_PRIVATE Assembler : public AssemblerBase {
   // RV64C Standard Extension
   void c_nop();
   void c_addi(Register rd, int8_t imm6);
+  void c_fldsp(FPURegister rd, int16_t imm9);
+  void c_lwsp(Register rd, int16_t imm8);
+  void c_ldsp(Register rd, int16_t imm9);
   void c_jr(Register rs1);
   void c_mv(Register rd, Register rs2);
   void c_ebreak();
@@ -1024,6 +1027,7 @@ class V8_EXPORT_PRIVATE Assembler : public AssemblerBase {
   void GenInstrCR(uint8_t funct4, Opcode opcode, Register rd, Register rs2);
   void GenInstrCI(uint8_t funct3, Opcode opcode, Register rd, int8_t imm6);
   void GenInstrCIU(uint8_t funct3, Opcode opcode, Register rd, uint8_t uimm6);
+  void GenInstrCIU(uint8_t funct3, Opcode opcode, FPURegister rd, uint8_t uimm6);
 
   // ----- Instruction class templates match those in LLVM's RISCVInstrInfo.td
   void GenInstrBranchCC_rri(uint8_t funct3, Register rs1, Register rs2,

@@ -474,12 +474,15 @@ class Simulator : public SimulatorBase {
   inline int32_t rvc_rs2_reg() const { return instr_.RvcRs2Value(); }
   inline int64_t rvc_rs2() const { return get_register(rvc_rs2_reg()); }
   inline int32_t rvc_rd_reg() const { return instr_.RvcRdValue(); }
+  inline int32_t rvc_frd_reg() const { return instr_.RvcRdValue(); }
   inline int16_t boffset() const { return instr_.BranchOffset(); }
   inline int16_t imm12() const { return instr_.Imm12Value(); }
   inline int32_t imm20J() const { return instr_.Imm20JValue(); }
   inline int32_t imm5CSR() const { return instr_.Rs1Value(); }
   inline int16_t csr_reg() const { return instr_.CsrValue(); }
   inline int16_t rvc_imm6() const { return instr_.RvcImm6Value(); }
+  inline int16_t rvc_imm6_lwsp() const { return instr_.RvcImm6LwspValue(); }
+  inline int16_t rvc_imm6_ldsp() const { return instr_.RvcImm6LdspValue(); }
 
   inline void set_rd(int64_t value, bool trace = true) {
     set_register(rd_reg(), value);
@@ -496,6 +499,10 @@ class Simulator : public SimulatorBase {
   inline void set_rvc_rd(int64_t value, bool trace = true) {
     set_register(rvc_rd_reg(), value);
     if (trace) TraceRegWr(get_register(rvc_rd_reg()), DWORD);
+  }
+  inline void set_rvc_drd(double value, bool trace = true) {
+    set_fpu_register_double(rvc_rd_reg(), value);
+    if (trace) TraceRegWr(get_fpu_register(rvc_rd_reg()), DOUBLE);
   }
   inline int16_t shamt() const { return (imm12() & 0x3F); }
   inline int16_t shamt32() const { return (imm12() & 0x1F); }
