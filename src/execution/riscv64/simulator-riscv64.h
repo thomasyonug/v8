@@ -483,6 +483,8 @@ class Simulator : public SimulatorBase {
   inline int16_t rvc_imm6() const { return instr_.RvcImm6Value(); }
   inline int16_t rvc_imm6_lwsp() const { return instr_.RvcImm6LwspValue(); }
   inline int16_t rvc_imm6_ldsp() const { return instr_.RvcImm6LdspValue(); }
+  inline int16_t rvc_uimm6_swsp() const { return instr_.RvcImm6SwspValue(); }
+  inline int16_t rvc_uimm6_sdsp() const { return instr_.RvcImm6SdspValue(); }
 
   inline void set_rd(int64_t value, bool trace = true) {
     set_register(rd_reg(), value);
@@ -590,6 +592,7 @@ class Simulator : public SimulatorBase {
   void DecodeRVJType();
   void DecodeCRType();
   void DecodeCIType();
+  void DecodeCSSType();
 
   // Used for breakpoints and traps.
   void SoftwareInterrupt();

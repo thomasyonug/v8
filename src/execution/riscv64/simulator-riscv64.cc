@@ -3153,6 +3153,28 @@ void Simulator::DecodeCIType() {
   }
 }
 
+void Simulator::DecodeCSSType() {
+  switch (instr_.Funct3Value()) {
+    case RO_C_FSDSP: {
+      int64_t addr = get_register(sp) + rvc_uimm6_sdsp();
+      WriteMem<double>(addr, (double)rs2(), instr_.instr());
+      break;
+    }
+    case RO_C_SWSP: {
+      int64_t addr = get_register(sp) + rvc_uimm6_swsp();
+      WriteMem<int32_t>(addr, (int32_t)rs2(), instr_.instr());
+      break;
+    }
+    case RO_C_SDSP: {
+      int64_t addr = get_register(sp) + rvc_uimm6_sdsp();
+      WriteMem<int64_t>(addr, (int64_t)rs2(), instr_.instr());
+      break;
+    }
+    default:
+      UNSUPPORTED();
+  }
+}
+
 // Executes the current instruction.
 void Simulator::InstructionDecode(Instruction* instr) {
   if (v8::internal::FLAG_check_icache) {

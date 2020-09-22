@@ -82,6 +82,8 @@ class Decoder {
   void PrintRvcImm6(Instruction* instr);
   void PrintRvcImm6Ldsp(Instruction* instr);
   void PrintRvcImm6Lwsp(Instruction* instr);
+  void PrintRvcUimm6Sdsp(Instruction* instr);
+  void PrintRvcUimm6Swsp(Instruction* instr);
   void PrintAcquireRelease(Instruction* instr);
   void PrintBranchOffset(Instruction* instr);
   void PrintStoreOffset(Instruction* instr);
@@ -101,6 +103,7 @@ class Decoder {
   void DecodeJType(Instruction* instr);
   void DecodeCRType(Instruction* instr);
   void DecodeCIType(Instruction* instr);
+  void DecodeCSSType(Instruction* instr);
 
   // Printing of instruction name.
   void PrintInstructionName(Instruction* instr);
@@ -110,6 +113,7 @@ class Decoder {
   int FormatFPURegisterOrRoundMode(Instruction* instr, const char* option);
   int FormatRvcRegister(Instruction* instr, const char* option);
   int FormatRvcImm(Instruction* instr, const char* option);
+  int FormatRvcUimm(Instruction* instr, const char* option);
   int FormatOption(Instruction* instr, const char* option);
   void Format(Instruction* instr, const char* format);
   void Unknown(Instruction* instr);
@@ -244,6 +248,17 @@ void Decoder::PrintRvcImm6Lwsp(Instruction* instr) {
   int32_t imm = instr->RvcImm6LwspValue();
   out_buffer_pos_ += SNPrintF(out_buffer_ + out_buffer_pos_, "%d", imm);
 }
+
+void Decoder::PrintRvcUimm6Swsp(Instruction* instr) {
+  int32_t imm = instr->RvcImm6SwspValue();
+  out_buffer_pos_ += SNPrintF(out_buffer_ + out_buffer_pos_, "%d", imm);
+}
+
+void Decoder::PrintRvcUimm6Sdsp(Instruction* instr) {
+  int32_t imm = instr->RvcImm6SdspValue();
+  out_buffer_pos_ += SNPrintF(out_buffer_ + out_buffer_pos_, "%d", imm);
+}
+
 
 void Decoder::PrintAcquireRelease(Instruction* instr) {
   bool aq = instr->AqValue();
@@ -480,6 +495,24 @@ int Decoder::FormatRvcImm(Instruction* instr, const char* format) {
   return 5;
 }
 
+int Decoder::FormatRvcUimm(Instruction* instr, const char* format) {
+  DCHECK(STRING_STARTS_WITH(format, "Cuimm6"));
+  if (format[6] == 'S') {
+    if (format[7] == 'w') {
+      DCHECK(STRING_STARTS_WITH(format, "Cuimm6Swsp"));
+      PrintRvcUimm6Swsp(instr);
+      return 10;
+    } else if (format[7] == 'd') {
+      DCHECK(STRING_STARTS_WITH(format, "Cuimm6Sdsp"));
+      PrintRvcUimm6Sdsp(instr);
+      return 10;
+    }
+  } else {
+    UNREACHABLE();
+  }
+  return 6;
+}
+
 // FormatOption takes a formatting string and interprets it based on
 // the current instructions. The format string points to the first
 // character of the option string (the option escape has already been
@@ -492,6 +525,8 @@ int Decoder::FormatOption(Instruction* instr, const char* format) {
         return FormatRvcRegister(instr, format);
       } else if (format[1] == 'i') {
         return FormatRvcImm(instr, format);
+      } else if (format[1] == 'u') {
+        return FormatRvcUimm(instr, format);
       }
       UNREACHABLE();
     }
@@ -1499,6 +1534,22 @@ void Decoder::DecodeCIType(Instruction* instr) {
   }
 }
 
+void Decoder::DecodeCSSType(Instruction* instr) {
+  switch(instr->RvcFunct3Value()) {
+    case RO_C_SWSP:
+      Format(instr, "sw        'Crs2, 'Cuimm6Swsp(sp)");
+    break;
+    case RO_C_SDSP:
+      Format(instr, "sd        'Crs2, 'Cuimm6Sdsp(sp)");
+    break;
+    case RO_C_FSDSP:
+      Format(instr, "fsd        'Crs2, 'Cuimm6Sdsp(sp)");
+    break;
+    default:
+      UNSUPPORTED_RISCV();
+  }
+}
+
 // Disassemble the instruction at *instr_ptr into the output buffer.
 // All instructions are one word long, except for the simulator
 // pseudo-instruction stop(msg). For that one special case, we return
@@ -1535,6 +1586,9 @@ int Decoder::InstructionDecode(byte* instr_ptr) {
       break;
     case Instruction::kCIType:
       DecodeCIType(instr);
+      break;
+    case Instruction::kCSSType:
+      DecodeCSSType(instr);
       break;
     default:
       Format(instr, "UNSUPPORTED");
